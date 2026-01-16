@@ -1,0 +1,20 @@
+/* Additional styles if needed */
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper::after {
+  content: '▼';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+}
+
+select {
+  background-image: none;
+  padding-right: 2.5rem;
+}
