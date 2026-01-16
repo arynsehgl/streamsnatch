@@ -1,0 +1,24 @@
+[build]
+  # Build command for the frontend
+  command = "cd client && npm install && npm run build"
+  # Directory where the built files will be
+  publish = "client/dist"
+  
+  # Environment variables (if needed)
+  [build.environment]
+    NODE_VERSION = "18"
+
+# Redirect rules for SPA - all routes go to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
