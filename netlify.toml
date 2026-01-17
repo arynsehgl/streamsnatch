@@ -1,4 +1,6 @@
 [build]
+  # Base directory for the build
+  base = "."
   # Build command for the frontend
   command = "cd client && npm install && npm run build"
   # Directory where the built files will be
