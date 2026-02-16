@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 /**
  * Downloads a video using yt-dlp and optionally merges with FFmpeg
  * @param {string} url - YouTube URL
- * @param {string} format - Format: 'mp4-720', 'mp4-1080', or 'mp3'
+ * @param {string} format - Format: 'mp4-720', 'mp4-1080', 'mp3', or 'wav'
  * @returns {Promise<string>} - Path to downloaded file
  */
 export async function downloadVideo(url, format) {
@@ -44,6 +44,9 @@ export async function downloadVideo(url, format) {
     if (format === 'mp3') {
       // MP3 download - extract audio only
       ytDlpCommand = `yt-dlp -x --audio-format mp3 --audio-quality 0 ${jsRuntimeFlag} -o "${safeOutputTemplate}" "${url}"`;
+    } else if (format === 'wav') {
+      // WAV download - extract audio as uncompressed WAV
+      ytDlpCommand = `yt-dlp -x --audio-format wav --audio-quality 0 ${jsRuntimeFlag} -o "${safeOutputTemplate}" "${url}"`;
     } else if (format === 'mp4-720') {
       // MP4 720p - use format with fallback: best single file first, then combined streams
       // This handles SABR streaming better
@@ -72,13 +75,16 @@ export async function downloadVideo(url, format) {
     // Find the downloaded file
     const files = fs.readdirSync(downloadsDir);
     
-    if (format === 'mp3') {
-      // Look for .mp3 file
-      const mp3File = files.find((f) => f.endsWith('.mp3'));
-      if (!mp3File) {
-        throw new Error('MP3 file not found after download');
+    if (format === 'mp3' || format === 'wav') {
+      // Look for audio file with the expected extension
+      const audioExt = format === 'mp3' ? '.mp3' : '.wav';
+      const audioFile = files.find((f) => f.endsWith(audioExt));
+      if (!audioFile) {
+        throw new Error(
+          `${format.toUpperCase()} file not found after download. Try a different format.`
+        );
       }
-      finalPath = path.join(downloadsDir, mp3File);
+      finalPath = path.join(downloadsDir, audioFile);
     } else {
       // Look for merged MP4 file (yt-dlp should have merged it automatically)
       const mp4File = files.find((f) => f.endsWith('.mp4') && !f.includes('.temp') && !f.includes('.f') && !f.includes('.webm'));

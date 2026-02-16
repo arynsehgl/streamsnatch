@@ -53,12 +53,16 @@ app.post('/api/download', async (req, res) => {
   }
 
   if (!validateUrl(url)) {
-    return res.status(400).json({ error: 'Invalid YouTube URL' });
+    return res
+      .status(400)
+      .json({ error: 'Unsupported URL. Use a link from YouTube, Instagram, TikTok, or another supported site.' });
   }
 
-  const validFormats = ['mp4-720', 'mp4-1080', 'mp3'];
+  const validFormats = ['mp4-720', 'mp4-1080', 'mp3', 'wav'];
   if (!format || !validFormats.includes(format)) {
-    return res.status(400).json({ error: 'Invalid format. Must be one of: mp4-720, mp4-1080, mp3' });
+    return res
+      .status(400)
+      .json({ error: 'Invalid format. Must be one of: mp4-720, mp4-1080, mp3, wav' });
   }
 
   let filePath = null;
@@ -78,11 +82,13 @@ app.post('/api/download', async (req, res) => {
     }
 
     // Generate filename
-    const ext = format === 'mp3' ? 'mp3' : 'mp4';
+    const ext = format === 'mp3' ? 'mp3' : format === 'wav' ? 'wav' : 'mp4';
     const filename = `streamsnatch-${Date.now()}.${ext}`;
 
     // Set headers
-    res.setHeader('Content-Type', format === 'mp3' ? 'audio/mpeg' : 'video/mp4');
+    const contentType =
+      format === 'mp3' ? 'audio/mpeg' : format === 'wav' ? 'audio/wav' : 'video/mp4';
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', stats.size);
 

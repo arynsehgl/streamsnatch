@@ -10,6 +10,7 @@ export default {
         'dark-bg': '#0F1117',
         'cyan-accent': '#00F5FF',
         'purple-accent': '#9D4EDD',
+        'pink-accent': '#ec4899',
       },
       fontFamily: {
         sans: ['Inter', 'monospace'],

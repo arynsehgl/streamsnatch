@@ -10,10 +10,22 @@
 
 body {
   font-family: 'Inter', monospace;
-  background: #0F1117;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 35%, #312e81 70%, #0f1117 100%);
   color: #ffffff;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Subtle dot pattern overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Custom scrollbar */
@@ -59,4 +71,27 @@ body {
 .btn-glow:hover {
   box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
   transform: translateY(-2px);
+}
+
+/* Teal-to-pink gradient (Analyze / primary) */
+.gradient-primary {
+  background: linear-gradient(135deg, #00F5FF 0%, #ec4899 100%);
+}
+.gradient-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* Design ref: floating particles */
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-30px);
+    opacity: 0.5;
+  }
+}
+.float-particle {
+  animation: float-particle 3s ease-in-out infinite;
 }
