@@ -106,10 +106,13 @@ function App() {
     setIsDownloading(true)
     cancelTokenRef.current = axios.CancelToken.source()
 
+    const apiBase = import.meta.env.VITE_API_URL || ''
+    const downloadUrl = `${apiBase}/api/download`
+
     try {
       const response = await axios({
         method: 'POST',
-        url: '/api/download',
+        url: downloadUrl,
         data: { url, format: option.apiFormat },
         responseType: 'blob',
         cancelToken: cancelTokenRef.current.token,
@@ -118,6 +121,17 @@ function App() {
         },
         timeout: 300000,
       })
+
+      const contentType = (response.headers['content-type'] || '').toLowerCase()
+      if (contentType.includes('text/html')) {
+        const text = await response.data.text()
+        if (text.includes('Page not found') || text.includes('<!DOCTYPE html>')) {
+          setError('Download failed: server returned a page instead of a file. If you\'re on Netlify, deploy the backend and set VITE_API_URL to your backend URL.')
+          setIsDownloading(false)
+          setSelectedOption(null)
+          return
+        }
+      }
 
       const contentDisposition = response.headers['content-disposition']
       let filename = 'download'
@@ -128,25 +142,17 @@ function App() {
         const ext = option.apiFormat === 'mp3' || option.apiFormat === 'wav' ? option.apiFormat : 'mp4'
         filename = `streamsnatch-${Date.now()}.${ext}`
       }
+
       const blob = new Blob([response.data])
       const blobUrl = window.URL.createObjectURL(blob)
-      const win = window.open('', '_blank')
-      if (win) {
-        const isAudio = option.type === 'audio'
-        const mediaTag = isAudio
-          ? `<audio controls autoplay style="width:100%; margin-top:16px;"><source src="${blobUrl}"></audio>`
-          : `<video controls autoplay style="width:100%; max-height:70vh; margin-top:16px; background:#000;"><source src="${blobUrl}"></video>`
-        win.document.write(`
-<!doctype html><html><head><meta charset="utf-8"/><title>${filename}</title><meta name="viewport" content="width=device-width, initial-scale=1"/><style>body{margin:0;padding:24px;background:#1e1b4b;color:#f9fafb;font-family:system-ui;display:flex;flex-direction:column;align-items:center;gap:12px;}h1{font-size:1rem;margin:0;}a.button{margin-top:8px;padding:8px 14px;border-radius:999px;background:linear-gradient(135deg,#22d3ee,#a855f7);color:#0f172a;font-size:0.8rem;font-weight:600;text-decoration:none;}</style></head><body><h1>${filename}</h1><p>Use the player menu or right-click to download.</p>${mediaTag}<a class="button" href="${blobUrl}" download="${filename}">Download file</a></body></html>`)
-        win.document.close()
-      } else {
-        const a = document.createElement('a')
-        a.href = blobUrl
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-      }
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000)
+
       setIsDownloading(false)
       setDownloadComplete(true)
       setTimeout(() => {
@@ -161,17 +167,30 @@ function App() {
         return
       }
       if (err.response?.data) {
-        const text = await err.response.data.text()
+        let text = ''
         try {
-          const data = JSON.parse(text)
-          setError(data.error || 'Download failed')
+          text = typeof err.response.data.text === 'function'
+            ? await err.response.data.text()
+            : String(err.response.data)
         } catch {
-          setError(text || 'Download failed')
+          text = 'Download failed'
+        }
+        if (text.includes('Page not found') || text.includes('<!DOCTYPE html>') || text.includes('<!doctype html>')) {
+          setError('Download failed: the server returned a page instead of a file. If you\'re on Netlify, deploy the backend and set VITE_API_URL in Netlify to your backend URL.')
+        } else {
+          try {
+            const data = JSON.parse(text)
+            setError(data.error || 'Download failed')
+          } catch {
+            setError(text.slice(0, 200) || 'Download failed')
+          }
         }
       } else if (err.code === 'ECONNABORTED') {
         setError('Request timed out.')
+      } else if (err.message) {
+        setError(err.message)
       } else {
-        setError(err.message || 'Download failed.')
+        setError('Download failed. Check that the backend is running and reachable.')
       }
     } finally {
       cancelTokenRef.current = null

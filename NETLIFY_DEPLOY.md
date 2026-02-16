@@ -23,7 +23,11 @@
 
 ## Troubleshooting
 
-If you see "Page not found" error:
+### Download returns "Page not found" or a blank/HTML page
+- Netlify only hosts the frontend. When you click Download, the app calls `/api/download`; on Netlify that hits Netlify’s server and returns a 404 HTML page.
+- **Fix:** Deploy the backend (e.g. Railway, Render) and in Netlify set **Environment variable** `VITE_API_URL` = `https://your-backend-url.com` (no trailing slash). Then redeploy the frontend.
+
+### If you see "Page not found" on the site (not download):
 
 1. **Check Build Logs**
    - Go to Deploys → Click on latest deploy → View build logs
