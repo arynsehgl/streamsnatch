@@ -170,28 +170,23 @@ export async function downloadVideo(url, format) {
       }
     }
 
-    // Parse error message
-    let errorMessage = 'Download failed';
-    if (error.message) {
-      errorMessage = error.message;
-    } else if (error.stderr) {
-      errorMessage = error.stderr;
+    // Parse error message - map technical errors to user-friendly messages
+    let raw = (error.message || error.stderr || '').toLowerCase();
+
+    if (raw.includes('private') || raw.includes('private video') || raw.includes('sign in') || raw.includes('age-restricted')) {
+      throw new Error('Video not available or restricted');
+    }
+    if (raw.includes('video unavailable') || raw.includes('unavailable') || raw.includes('deleted') || raw.includes('removed')) {
+      throw new Error('Video not available');
+    }
+    if (raw.includes('timeout') || raw.includes('timed out')) {
+      throw new Error('Request timed out. Try a shorter video or different format');
+    }
+    if (raw.includes('empty') || raw.includes('no such file') || raw.includes('file not found')) {
+      throw new Error('Could not get this video. Try a different format');
     }
 
-    // Check for common errors
-    if (errorMessage.includes('ERROR: [youtube]') || errorMessage.includes('Private video')) {
-      throw new Error('Video is private or unavailable');
-    }
-    if (errorMessage.includes('ERROR: [youtube] Video unavailable')) {
-      throw new Error('Video is unavailable');
-    }
-    if (errorMessage.includes('yt-dlp: command not found')) {
-      throw new Error('yt-dlp is not installed. Please install it first.');
-    }
-    if (errorMessage.includes('ffmpeg: command not found')) {
-      throw new Error('FFmpeg is not installed. Please install it first.');
-    }
-
-    throw new Error(errorMessage);
+    // All other errors (python3, yt-dlp, ffmpeg, env, etc.) -> generic message
+    throw new Error('Download failed. Please try again');
   }
 }

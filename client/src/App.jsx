@@ -10,6 +10,17 @@ const DOWNLOAD_OPTIONS = [
   { quality: 'WAV Audio', format: 'WAV', size: '~varies', type: 'audio', apiFormat: 'wav' },
 ]
 
+// Map any technical error to user-friendly message
+function toUserFriendlyError(msg) {
+  if (!msg || typeof msg !== 'string') return 'Download failed. Please try again.'
+  const s = msg.toLowerCase()
+  if (s.includes('python') || s.includes('yt-dlp') || s.includes('ffmpeg') || s.includes('env ') ||
+      s.includes('no such file') || s.includes('econnrefused') || s.includes('internal server')) {
+    return 'Download failed. Please try again.'
+  }
+  return msg
+}
+
 // Design ref: feature cards when no options yet
 const FEATURES = [
   { icon: '⚡', label: 'Lightning Fast' },
@@ -176,21 +187,21 @@ function App() {
           text = 'Download failed'
         }
         if (text.includes('Page not found') || text.includes('<!DOCTYPE html>') || text.includes('<!doctype html>')) {
-          setError('Download failed: the server returned a page instead of a file. If you\'re on Netlify, deploy the backend and set VITE_API_URL in Netlify to your backend URL.')
+          setError('Download failed. Please try again later.')
         } else {
           try {
             const data = JSON.parse(text)
-            setError(data.error || 'Download failed')
+            setError(toUserFriendlyError(data.error) || 'Download failed. Please try again.')
           } catch {
-            setError(text.slice(0, 200) || 'Download failed')
+            setError('Download failed. Please try again.')
           }
         }
       } else if (err.code === 'ECONNABORTED') {
-        setError('Request timed out.')
+        setError('Request timed out. Try a shorter video or different format.')
       } else if (err.message) {
-        setError(err.message)
+        setError(toUserFriendlyError(err.message))
       } else {
-        setError('Download failed. Check that the backend is running and reachable.')
+        setError('Download failed. Please try again.')
       }
     } finally {
       cancelTokenRef.current = null

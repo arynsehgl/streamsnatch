@@ -127,19 +127,21 @@ app.post('/api/download', async (req, res) => {
       }
     }
 
-    // Send error response
+    // Send user-friendly error (never expose technical details)
     if (!res.headersSent) {
       const statusCode = error.statusCode || 500;
-      const errorMessage = error.message || 'Download failed';
-      res.status(statusCode).json({ error: errorMessage });
+      const msg = error.message || 'Download failed. Please try again';
+      res.status(statusCode).json({ error: msg });
     }
   }
 });
 
-// Error handler
+// Error handler - generic message only
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Download failed. Please try again' });
+  }
 });
 
 app.listen(PORT, () => {
